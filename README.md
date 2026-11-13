@@ -71,6 +71,53 @@ This is what `unfluff` will try to grab from a web page:
 
 This is returned as a simple json object.
 
+### Structured content blocks (optional)
+
+Plain `text` flattens everything into a string, which loses headings, list
+nesting and code formatting. For technical documents you can opt in to a
+structured `blocks` representation of the same article content. It is off by
+default and the return shape is unchanged unless you enable it.
+
+Both the regular and the lazy extractor accept an optional third `options`
+argument:
+
+```javascript
+extractor = require('unfluff');
+
+// regular (eager) extractor
+data = extractor(my_html_data, 'en', { blocks: true });
+
+// lazy extractor
+data = extractor.lazy(my_html_data, 'en', { blocks: true });
+data.blocks();
+```
+
+The article root is chosen by the exact same content scoring used for `text`,
+so `blocks` and `text` always cover the same content. The blocks are returned
+in original DOM order and can be of these types:
+
+- `heading` — `{ type: 'heading', level, text, links }` where `level` is the
+  heading level (1-6). Short headings are never dropped for having few
+  stopwords.
+- `paragraph` — `{ type: 'paragraph', text, links }`
+- `list` — `{ type: 'list', ordered, items, links }`. An ordered list carries
+  `start` when the markup specifies one (e.g. `<ol start="3">`). Each item is
+  `{ text, links, blocks? }` where the optional `blocks` holds nested lists or
+  code blocks, so list nesting is preserved.
+- `code` — `{ type: 'code', text, language }`. Newlines and indentation are
+  preserved verbatim. `language` is the detected language marker
+  (`language-*` / `lang-*` / `highlight-*` classes, `hljs` classes or
+  `data-language` attributes) or `null` when no hint is present.
+
+Every block that can contain prose also carries a `links` array with the link
+text and `href` of each anchor inside it. Inline text appears exactly once:
+text inside a nested block is not repeated in its parent. Content outside the
+article (navigation, scripts, footers) is excluded just like it is from `text`.
+
+`blocks` and `text` are computed from independent cached document copies, so in
+lazy mode the order in which you call them does not affect either result, and
+repeated calls return the cached value.
+
 ### Command line interface
 
 You can pass a webpage to unfluff and it will try to parse out the interesting

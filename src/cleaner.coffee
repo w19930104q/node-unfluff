@@ -1,10 +1,13 @@
 _ = require("lodash")
 
-module.exports = cleaner = (doc) ->
+module.exports = cleaner = (doc, options = {}) ->
   removeBodyClasses(doc)
   cleanArticleTags(doc)
   cleanEmTags(doc)
-  cleanCodeBlocks(doc)
+  # The blocks pipeline keeps code blocks intact so their whitespace and
+  # language markers can be reported as structured data. The default text
+  # pipeline still strips them, preserving the original output.
+  cleanCodeBlocks(doc) unless options.keepCode
   removeDropCaps(doc)
   removeScriptsStyles(doc)
   cleanBadTags(doc)
@@ -17,8 +20,8 @@ module.exports = cleaner = (doc) ->
   cleanParaSpans(doc)
   cleanUnderlines(doc)
   cleanErrantLinebreaks(doc)
-  divToPara(doc, 'div')
-  divToPara(doc, 'span')
+  divToPara(doc, 'div', options.keepCode)
+  divToPara(doc, 'span', options.keepCode)
   return doc
 
 removeBodyClasses = (doc) ->
@@ -82,7 +85,7 @@ cleanUnderlines = (doc) ->
   nodes.each () ->
     doc(this).replaceWith(doc(this).html())
 
-getReplacementNodes = (doc, div) ->
+getReplacementNodes = (doc, div, keepCode) ->
   replacementText = []
   nodesToReturn = []
   nodesToRemove = []
@@ -91,9 +94,19 @@ getReplacementNodes = (doc, div) ->
   childs.each () ->
     kid = doc(this)
 
+    # In keepCode mode, headings, lists and pre blocks survive as real
+    # elements instead of being serialized into paragraph html, which would
+    # drop the heading level, the list nesting or the pre tag (and its
+    # language class) via the parser's paragraph nesting rules.
+    if keepCode && (kid[0].name == 'pre' || kid[0].name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol'])
+      if replacementText.length > 0
+        nodesToReturn.push(replacementText.join(''))
+        replacementText = []
+      nodesToReturn.push(kid)
+
     # node is a p
     # and already have some replacement text
-    if kid[0].name == 'p' && replacementText.length > 0
+    else if kid[0].name == 'p' && replacementText.length > 0
       txt = replacementText.join('')
       nodesToReturn.push(txt)
       replacementText = []
@@ -145,11 +158,16 @@ replaceWithPara = (doc, div) ->
   divContent = doc(div).html()
   doc(div).replaceWith("<p>#{divContent}</p>")
 
-divToPara = (doc, domType) ->
+divToPara = (doc, domType, keepCode) ->
   divs = doc(domType)
   lastCount = divs.length + 1
 
   tags = ['a', 'blockquote', 'dl', 'div', 'img', 'ol', 'p', 'pre', 'table', 'ul']
+  # In keepCode mode headings count as block-level elements too, so a div that
+  # only wraps a heading is not flattened into a paragraph (heading levels must
+  # survive for the blocks output).
+  if keepCode
+    tags = tags.concat(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
 
   divs.each () ->
     div = doc(this)
@@ -159,12 +177,17 @@ divToPara = (doc, domType) ->
     if items.length == 0
       replaceWithPara(doc, this)
     else
-      replaceNodes = getReplacementNodes(doc, div)
+      replaceNodes = getReplacementNodes(doc, div, keepCode)
 
       html = ""
       _.each replaceNodes, (node) ->
         if node != ''
-          html += "<p>#{node}</p>"
+          if keepCode && typeof node != 'string'
+            # Re-insert a preserved element node rather than paragraph html.
+            placeholder = doc('<div></div>').append(node.clone())
+            html += placeholder.html()
+          else
+            html += "<p>#{node}</p>"
 
       div.empty()
       doc(div).replaceWith("#{html}")

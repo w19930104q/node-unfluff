@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Blocks Regression: A Technical Article &amp; More</title>
+  <meta name="description" content="A fixed regression page for structured blocks extraction">
+</head>
+<body>
+  <nav id="navbar">
+    <a href="/home">Home</a>
+    <a href="/about">About &amp; Contact</a>
+    <a href="/archive">Archive</a>
+  </nav>
+  <article>
+    <h1>Short</h1>
+    <p>This is the opening paragraph of the technical document and it contains plenty of common English stopwords such as the, and, of, with and which so that the scoring algorithm recognizes it as real article text rather than navigation noise.</p>
+
+    <h2>Setup</h2>
+    <p>Before you begin, read the <a href="https://example.com/docs?a=1&amp;b=2">installation guide &amp; notes</a> carefully because every later step depends on it.</p>
+
+    <h3>Tiny</h3>
+    <p>The next section walks through the configuration options that you will need on most machines and explains why each of them matters for a reliable build.</p>
+
+    <ol start="3">
+      <li>First numbered item with enough ordinary words to look like prose.</li>
+      <li>Second numbered item that contains a nested unordered list.
+        <ul>
+          <li>Nested bullet referencing <a href="https://example.com/nested">a nested link</a> inside the list item text.</li>
+          <li>Another nested bullet with <strong>strong inline</strong> markup and an entity: apples &amp; oranges.</li>
+        </ul>
+      </li>
+      <li>Third numbered item &mdash; with a dash entity and trailing text.</li>
+    </ol>
+
+    <p>Here is a plain unordered list that follows the ordered one, keeping the original document order between paragraphs and lists intact.</p>
+    <ul>
+      <li>Bulleted item one with a reasonable amount of words in it.</li>
+      <li>Bulleted item two that mentions the <a href="https://example.com/api">api documentation</a> page.</li>
+    </ul>
+
+    <h2>Code samples</h2>
+    <p>The following snippet demonstrates indentation, blank lines and a language marker that the structured output must preserve exactly as written.</p>
+    <div>
+      <pre class="highlight language-javascript"><code class="language-javascript">function greet(name) {
+  const message = `hello ${name}`;
+
+  return message &amp;&amp; message.toUpperCase();
+}</code></pre>
+    </div>
+    <p>A bare pre block without a language hint still keeps its leading indentation and internal line breaks.</p>
+    <pre>    indented first line
+second line
+
+  third line after blank</pre>
+    <p>Inline code such as <code>npm test</code> stays inside the paragraph text instead of becoming a code block.</p>
+
+    <h2>Closing</h2>
+    <p>This final paragraph again has enough common stopwords to anchor the article score and confirms that the blocks end in the same order in which they appeared in the original document.</p>
+  </article>
+  <script>
+    var tracker = 'this script content must never appear in the extracted blocks';
+  </script>
+  <div class="footer">
+    Footer junk with some words that should stay outside the article because it lives in the footer region of the page.
+  </div>
+</body>
+</html>

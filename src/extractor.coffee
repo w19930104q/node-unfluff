@@ -1,6 +1,7 @@
 _ = require("lodash")
 stopwords = require("./stopwords")
 formatter = require("./formatter")
+blocksExtractor = require("./blocks")
 
 module.exports =
   # Grab the date of an html doc
@@ -96,6 +97,23 @@ module.exports =
       formatter(doc, topNode, lang)
     else
       ""
+
+  # Grab the main content as structured blocks (headings, paragraphs, nested
+  # lists and code blocks) in original DOM order. The article root is selected
+  # by the same calculateBestNode scoring as the plain text pipeline - no
+  # separate content-scoring implementation is used. This must run against a
+  # doc cleaned with keepCode so code blocks survive.
+  #
+  # postCleanup's pruning pass removes nodes that lack a gravity score, which
+  # would delete short headings and code blocks precisely because they contain
+  # few stopwords, so the blocks pipeline only runs the sibling-merge step
+  # (which adds nearby paragraphs) and does its own structural walk.
+  blocks: (doc, topNode, lang) ->
+    if topNode
+      topNode = addSiblings(doc, topNode, lang)
+      blocksExtractor(doc, topNode)
+    else
+      []
 
   # Grab an image for the page
   image: (doc) ->

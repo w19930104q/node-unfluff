@@ -1,3 +1,11 @@
+### Unreleased
+* Add an optional structured `blocks` output (`{ blocks: true }` third argument,
+  also supported by `extractor.lazy`) that returns the article as ordered
+  heading, paragraph, nested list and code blocks. Headings keep their level,
+  ordered lists keep their start index, code blocks keep whitespace and a
+  language marker, and inline links keep text and href. The default return
+  shape, metadata and `text` output are unchanged.
+
 ### 3.0.1
 * Removed engine limitaitons in package.json since they no longer are useful.
 
